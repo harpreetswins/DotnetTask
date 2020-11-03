@@ -1,0 +1,94 @@
+@page "/manage-tasks"
+@inject HttpClient http
+@inherits MemberTaskBase
+
+@using Domain.ViewModel
+@using WebClient.Abstractions
+@using WebClient.Shared.Models
+@using WebClient.Components
+@using WebClient.Shared.Components
+
+@inject IMemberDataService memberService;
+@inject ITaskDataService taskDataService;
+
+
+@if (isLoaded)
+{
+<div class="page-wrapper row m-0 col-12 p-0">
+    <div class="col-4 p-0">
+        <LeftMenu />
+    </div>
+    <div class="col-8 p-0">
+        @if (showLister)
+        {
+<div class="col-10 offset-1 pt-5">
+    <div class="row m-0">
+        <Field class="col-9 p-0 custom-input">
+            <TextEdit Placeholder="Enter New Task" @bind-text="@newTask" />
+        </Field>
+        <div class="col-3 p-0 text-right">
+            <Button class="add-btn px-4" @onclick="@OnAddItem">Add</Button>
+        </div>
+    </div>
+    <div class="col-3 p-0 text-right" style="text-align: left !important; color: red;">
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <label>@message</label>
+            }
+    </div>
+</div>
+                    <div class="col-10 offset-1">
+                        <TaskListerComponent />
+                    </div>}
+        @if (false)
+        {
+<div class="col-10 offset-1 pt-5">
+</div>}
+    </div>
+</div>}
+
+@code { public List<MemberVm> members;
+    public string newTask;
+    public string message;
+
+
+    private bool isLoaded;
+    private bool showLister;
+
+    protected override Task OnInitializedAsync()
+    {
+        showLister = true;
+        isLoaded = true;
+        memberService.SelectedMemberChanged += MemberDataServiceOnSelectedMemberChanged;
+        return base.OnInitializedAsync();
+    }
+    private void MemberDataServiceOnSelectedMemberChanged(object sender, EventArgs e)
+    {
+
+        message = string.Empty;
+        StateHasChanged();
+    }
+    private void OnAddItem()
+    {
+        var task = new Domain.ViewModel.Task.TaskVM()
+        {
+            id = Guid.NewGuid(),
+            isComplete = false,
+            subject = newTask
+        };
+
+        newTask = string.Empty;
+
+        if (memberService.SelectedMember != null)
+        {
+            message = string.Empty;
+            task.assignedToId = memberService.SelectedMember.Id;
+            taskDataService.CreateTask(task);
+        }
+        else
+        {
+            message = "Please select member first!";
+        }
+
+        StateHasChanged();
+    } }

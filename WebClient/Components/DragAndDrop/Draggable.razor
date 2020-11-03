@@ -1,0 +1,26 @@
+﻿@typeparam T
+@using WebClient.Services;
+@inject DragAndDropService DragAndDropService
+
+
+<div draggable="true" @ondragstart="@OnDragStart">
+    @ChildContent
+</div>
+
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string Zone { get; set; }
+
+    [Parameter]
+    public T Data { get; set; }
+
+
+    void OnDragStart()
+    {
+        DragAndDropService.StartDrag(Data, Zone);
+    }
+}

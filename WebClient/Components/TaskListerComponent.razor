@@ -1,0 +1,155 @@
+@using WebClient.Abstractions
+@using WebClient.Shared.Models
+@using Domain.ViewModel
+@using Domain.ViewModel.Task
+@using WebClient.Pages;
+
+@inherits MemberTaskBase
+@inject ITaskDataService taskDataService;
+@inject IMemberDataService memberService;
+
+@namespace WebClient.Components.DragAndDrop
+
+<style>
+    .task-wrapper .task-item {
+        background: #FFFFFF;
+        border: 1px solid #C5C9C9;
+        box-sizing: border-box;
+        border-radius: 8px;
+        font-size: 24px;
+        font-family: "Poppins Light";
+    }
+
+    .done-text {
+        text-decoration: line-through;
+    }
+
+    .task-wrapper .avtar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+
+    @@media(max-width: 1400px) {
+        .task-wrapper .task-item {
+            font-size: 16px;
+        }
+
+        .task-wrapper .avtar {
+            width: 24px;
+            height: 24px;
+        }
+
+        .delete-icon {
+            width: 25px;
+        }
+    }
+
+    @@media(max-width: 767.98px) {
+        .task-wrapper .avtar {
+            width: 16px;
+            height: 16px;
+        }
+    }
+</style>
+
+
+
+
+<div class="task-wrapper">
+    @if (MyTasks != null && MyTasks.Count > 0)
+    {
+        foreach (var item in MyTasks)
+        {
+            if (true)
+            {
+                <Draggable Data="@item.id">
+                    <div class="task-item p-3 my-3 row m-0">
+                        <div class="col-10 p-0">
+                            <Check TValue="bool" Checked="@item.isComplete" CheckedChanged="@(val => CompleteTask(item))">
+                                <span class="@(item.isComplete ? "done-text" : "")">@item.subject</span>
+                            </Check>
+                        </div>
+                        <div class="col-2 p-0 d-flex justify-content-end align-items-center">
+                            @if (item.assignedToId.HasValue==true && selectedMember!=null)
+                            {
+                                <div class="avtar mr-1" style="background-color: @selectedMember.Avatar;"></div>
+                            }
+                            <img class="delete-icon" src="/assets/images/delete-icon.svg" />
+                        </div>
+                    </div>
+                </Draggable>
+                        
+            }
+        }
+     }
+</div>
+
+@code{ 
+    private List<Domain.ViewModel.Task.TaskVM> tasks = new List<Domain.ViewModel.Task.TaskVM>();
+    private MemberVm selectedMember;
+
+    protected override Task OnInitializedAsync()
+    {
+        memberService.SelectedMemberChanged += MemberServiceOnSelectedMemberChanged;
+        taskDataService.TaskCreatedSuccess += TaskDataServiceOnTaskCreatedSuccess;
+        TaskDataService.TaskCompletedFailed += TaskDataServiceOnTaskCreatedFailed;
+        taskDataService.TaskCompleteSuccess += TaskDataServiceOnTaskCompleteSuccess;
+        TaskDataService.TaskCompletedFailed += TaskDataServiceOnTaskCompleteFailed;
+        taskDataService.TaskAssignedSuccess += TaskDataServiceOnTaskAssignedSuccess;
+        return base.OnInitializedAsync();
+    }
+    private void TaskDataServiceOnTaskCreatedSuccess(object sender, EventArgs e)
+    {
+        ReloadPage(selectedMember.Id);
+        StateHasChanged();
+    }
+    private void TaskDataServiceOnTaskCreatedFailed(object sender, EventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    private void TaskDataServiceOnTaskCompleteSuccess(object sender, EventArgs e)
+    {
+        StateHasChanged();
+    }
+    private void TaskDataServiceOnTaskCompleteFailed(object sender, EventArgs e)
+    {
+        StateHasChanged();
+    }
+
+
+    private void TaskDataServiceOnTaskAssignedSuccess(object sender, EventArgs e)
+    {
+        ReloadPage(selectedMember.Id);
+        StateHasChanged();
+    }
+
+    private void CompleteTask(Domain.ViewModel.Task.TaskVM model)
+    {
+        taskDataService.ToggleTask(model.id);
+        MakeItCompleted(model.id);
+        StateHasChanged();
+    }
+
+    private void MemberServiceOnSelectedMemberChanged(object sender, EventArgs e)
+    {
+        ReloadPage();
+        LoadCurrentTasks();
+    }
+
+    private void LoadCurrentTasks()
+    {
+        selectedMember = memberService.SelectedMember;
+
+        if (selectedMember == null || selectedMember.Id == Guid.Empty)
+        {
+            MyTasks = taskDataService.Tasks.ToList();
+            StateHasChanged();
+            return;
+        };
+
+        MyTasks = taskDataService.Tasks.Where(t => t.assignedToId == selectedMember.Id).ToList();
+        StateHasChanged();
+    }
+}
