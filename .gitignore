@@ -1,9 +1,0 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
-.idea/
-.vs
-/Sql/Sql.dbmdl
-/Sql/Sql.jfm
